@@ -1,0 +1,9 @@
+name = Retreat Form
+description = Retreat registration for the 2012 retreat.
+package = ELH Custom Modules
+core = 7.x
+files[] = retreatform.module
+
+;dependencies[] = autoload
+;php = 5.2
+

@@ -1,0 +1,304 @@
+<?php
+
+/**
+ * Retreatform Module developed for the St. Louis ACIM Council's
+ * annual retreat.  
+ * Started with the Mail and Form API Examples from the Examples module.
+ * It grew from there.
+ */
+
+// Load retreatform_mail.inc file for the hook_node_update function and
+// retreatform_database for the hook_init function
+module_load_include('inc', 'retreatform', 'retreatform_mail');
+module_load_include('inc', 'retreatform', 'retreatform_database');
+
+/**
+ * Implements hook_menu() for the registration form.
+ *
+ */
+function retreatform_menu() {
+  $items = array();
+  $items['retreat_registration'] = array(
+    'title' => t('Registration Form'),
+    'menu_name' => 'menu-2012-retreat',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('form_registration'),
+    'access callback' => TRUE,
+    'description' => t('Registration Form'),
+    'type' => MENU_NORMAL_ITEM,
+    'file' => 'retreatform_form.inc',
+  );
+  
+  $items['retreat_registration_intl'] = array(
+    'title' => t('Registration Form (International)'),
+    'menu_name' => 'menu-2012-retreat',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('form_registration_intl'),
+    'access callback' => TRUE,
+    'description' => t('Registration Form (International)'),
+    'type' => MENU_NORMAL_ITEM,
+    'file' => 'retreatform_form.inc',
+  );
+
+  $items['resend_email'] = array(
+    'title' => t('Resend Email(s)'),
+    'menu_name' => 'menu-retreat-email-tools',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('form_email_resend'),
+    'access callback' => TRUE,
+    'description' => t('Email Resend Form'),
+    'type' => MENU_NORMAL_ITEM,
+    'file' => 'email_resend_form.inc',
+  );
+
+  // Setup the room manager pages
+  $items['manage_rooms'] = array(
+    'title' => t('Manage Rooms'),
+//    'menu_name' => 'menu-manage-rooms',
+    'menu_name' => 'navigation',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('form_manage_setup_init'),
+    'access callback' => TRUE,
+    'type' => MENU_NORMAL_ITEM,
+    'file' => 'manage_rooms_form.inc',
+  );
+
+  $items['manage_rooms/init'] = array(
+    'title' => t('Instructions'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('form_manage_setup_init'),
+    'access callback' => TRUE,
+    'description' => t('Instructions and Initialization for the Room Manager'),
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'weight' => 0,
+    'file' => 'manage_rooms_form.inc',
+  );
+
+  $items['manage_rooms/1'] = array(
+    'title' => t('First Floor'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('form_manage_first_floor_rooms'),
+    'access callback' => TRUE,
+    'description' => t('Manage First Floor Rooms'),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 1,
+    'file' => 'manage_rooms_form.inc',
+  );
+
+  $items['manage_rooms/2'] = array(
+    'title' => t('Second Floor'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('form_manage_second_floor_rooms'),
+    'access callback' => TRUE,
+    'description' => t('Manage Second Floor Rooms'),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 2,
+    'file' => 'manage_rooms_form.inc',
+  );
+
+  $items['update_email'] = array(
+    'title' => t('Send update email to all registrants'),
+    'menu_name' => 'menu-retreat-email-tools',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('form_update_email'),
+    'access callback' => TRUE,
+    'description' => t('Sends update message to all registrations'),
+    'type' => MENU_NORMAL_ITEM,
+    'file' => 'update_email_form.inc',
+  );
+
+  $items['individual_email'] = array(
+    'title' => t('Send an email to individual registrant(s)'),
+    'menu_name' => 'menu-retreat-email-tools',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('form_individual_email'),
+    'access callback' => TRUE,
+    'description' => t('Send a message to individual registrant(s)'),
+    'type' => MENU_NORMAL_ITEM,
+    'file' => 'update_individual_form.inc',
+  );
+
+  $items['display_totals'] = array(
+    'title' => t('Current Registration Totals'),
+    'menu_name' => 'menu-retreat-management-2',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('form_current_totals'),
+    'access callback' => TRUE,
+    'description' => t('Displays current registration totals'),
+    'type' => MENU_NORMAL_ITEM,
+    'file' => 'current_totals_form.inc',
+  );
+
+  $items['admin/config/content/retreat_form'] = array(
+    'title' => 'Retreat Form',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('retreatform_config_form'),
+    'access arguments' => array('configure retreat form'),
+    'description' => 'Configure Retreat Form Settings',
+    'file' => 'retreatform_config_form.inc',
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_init().
+ *
+ * This function checks 2 init flags, one per floor, to determine if the variables need
+ * to be initialized from the MC room nodes.  The init flags are reset when reset from the
+ * Instructions page.
+ */
+function retreatform_init() {
+  $path = drupal_get_path_alias();
+
+  // If on the manage room pages
+  if ($path == 'manage_rooms') {
+
+    $initialized_1st_floor = variable_get('initialized_1st_floor', FALSE);
+    $initialized_2nd_floor = variable_get('initialized_2nd_floor', FALSE);
+    
+    // Get the room data from the MC Rooms nodes if nothing initialized yet
+    if ($initialized_1st_floor == FALSE && $initialized_2nd_floor == FALSE) {     
+      $all_rooms = get_sorted_room_listing();
+        
+      // Split into first and second floors
+      foreach($all_rooms as $key => $value) {
+        if ($key < 200) {
+          $first_floor_rooms[$key] = $value;
+        } else if ($key >= 200) {
+          $second_floor_rooms[$key] = $value;
+        }
+      }
+    }
+
+    // Check init flag so only intialize 1st floor variables once
+    if ($initialized_1st_floor == FALSE) {
+    
+      variable_set('first_floor_rooms', $first_floor_rooms);
+
+      // The flag is reset for each floor when the floor is saved
+      variable_set('initialized_1st_floor', TRUE);
+    }
+
+    // Check init flag so only intialize 2nd floor variables once
+    if ($initialized_2nd_floor == FALSE) {
+      
+      variable_set('second_floor_rooms', $second_floor_rooms);
+
+      // The flag is reset for each floor when the floor is saved
+      variable_set('initialized_2nd_floor', TRUE);
+    }
+  }
+
+  // Put up popup warning if leaving first or second floor pages without saving
+//  if ($path == 'manage_rooms/1') {
+//    drupal_add_js("jQuery(document).ready(function () {
+//      jQuery('.form_submit').click(function(e) {
+//        window.form_submit = true;
+//      });
+//      jQuery(window).bind('beforeunload', function() {
+//        if (!window.form_submit) {
+//          return 'You have unsaved changes, are you sure you want to leave this page? Any unsaved changes will be lost!';
+//        }
+//      });
+//    });", 'inline');
+//  }
+//  
+//  if ($path == 'manage_rooms/2') {
+//    drupal_add_js("jQuery(document).ready(function () {
+//      jQuery('#edit-submit-2nd-floor-rooms').click(function(e) {
+//        window.form_submit = true;
+//      });
+//      jQuery(window).bind('beforeunload', function() {
+//        if (!window.form_submit) {
+//          return 'You have unsaved changes, are you sure you want to leave this page? Any unsaved changes will be lost!';
+//        }
+//      });
+//    });", 'inline');
+//  }
+}
+
+/**
+* Implements hook_permission().
+*/
+function retreatform_permission() {
+  return array(
+    'configure retreat form' => array(
+      'title' => t('Configure the Retreat Form Settings')),
+  );
+}
+
+/**
+* Implements hook_views_query_alter().
+*/
+function retreatform_views_query_alter(&$view, &$query) {
+//  dpm($view, __FUNCTION__);
+//  dpm($query, __FUNCTION__);
+  if (($view->name === 'all_special_needs_registrations') ||
+      ($view->name === 'all_unassigned_room_registration') ||
+      ($view->name === 'all_private_room_registrations') ||
+      ($view->name === 'all_shared_room_registrations') ||
+      ($view->name === 'all_commuter_registrations') ||
+      ($view->name === 'all_saturday_commuter_registrations') ||
+      ($view->name === 'all_shared_bath_registrations') ||
+      ($view->name === 'all_saturday_commuter_registrations') ||
+      ($view->name === 'all_saturday_half_day_registrations') ||
+      ($view->name === 'all_2012_registrations') ||
+      ($view->name === 'all_registration_data') ||
+      ($view->name === '30_days_past_due') ||
+      ($view->name === '60_days_past_due') ||
+      ($view->name === 'all_meal_needs_registrations') ||
+      ($view->name === 'cancelled_registrations') ||
+      ($view->name === 'individual_emails_log') ||
+      ($view->name === 'scholarship_received') ||
+      ($view->name === 'ruth_hanna_recipients_retreat_') ||
+      ($view->name === 'mercy_center_report') ||
+      ($view->name === 'all_2012_unpaid_registrations_mail_') ||
+      ($view->name === 'all_2012_unpaid_registrations'))
+  {
+
+    // Update the filter date to the configured value
+    $query->where[1]['conditions'][0]['value'] = YEAR;
+  }
+}
+
+/**
+ * Implements hook_node_update().
+ *
+ * Looks for the payment received field to change to "paid" and sends a 
+ * payment received email
+ *
+ */
+function retreatform_node_update($node) {
+
+  if ($node->type == 'retreat_registration') {
+
+    $original_node = new stdClass();
+    $original_node = $node->original;
+    
+    // Get the new and original payment received value and payment method
+    $new_value = $node->field_payment_received[$node->language][0]['value'];
+    $payment_method = $node->field_form_payment[$node->language][0]['value'];
+    $dontsendemail = $node->field_don_t_send_payment_recieve[$node->language][0]['value'];
+    $old_value = $original_node->field_payment_received[$original_node->language][0]['value'];
+    
+    // If payment received didn't change, don't need to do anything
+    // also only send if a don't send email field is No
+    if (($new_value != $old_value) && ($dontsendemail == 'No')) {
+    
+      // If first char not ( assuming value updated to paid
+      // Also only send out email if payment method is Mail
+      $first_char_new = substr($new_value, 0, 1);
+      if (($first_char_new != "(") && ($payment_method == 'Mail')) {
+      
+        // Send out email for payment received
+        $values['email'] = $node->field_email_address[$node->language][0]['value'];
+        $values['first'] = $node->field_first_name[$node->language][0]['value'];
+        
+        email_payment_received_send($values);
+      }
+    }
+  }
+}
+
