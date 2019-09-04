@@ -10,7 +10,6 @@
 
 define ('STR_FOR_COST', ', $');
 define ('OPTION_1', 'Private room and bath');
-// define ('OPTION_2', 'Private room shared bath');
 define ('OPTION_3', 'Shared room private bath');
 define ('OPTION_4', 'Commuters, no overnight lodging');
 define ('OPTION_5', 'Saturday commuters, no overnight lodging');
@@ -198,27 +197,3 @@ function compute_eb_deadline_met() {
   
   return $return_val;
 }
-
-/*
-* This function determines if the deadline for scholarship applications has been met
-*
-*/
-//function compute_scholarship_deadline_met() {
-//
-//  $event_date = variable_get('retreat_date');
-//  $event_month = ltrim(substr($event_date, 0, 2), '0');
-//  $event_day = ltrim(substr($event_date, 3, 2), '0');
-//
-//  $event_date_new = strtotime($event_month . '/' . $event_day . '/' . YEAR);
-//
-//  // Get the date 60 days from now
-//  $today_plus_60 = strtotime("60 days");
-//  
-//  if ($today_plus_60 >= $event_date_new) {
-//    $deadline_met = 'Yes';
-//  } else {
-//    $deadline_met = 'No';
-//  }
-//
-//  return $deadline_met;
-//}

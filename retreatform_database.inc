@@ -5,7 +5,7 @@
  * This file has the database functions for the
  * RetreatForm module
  * 
- * OPTION_1, OPTION_2, OPTION_3, OPTION_4 and OPTION_5 are defined
+ * OPTION_1, OPTION_3, OPTION_4 and OPTION_5 are defined
  * in the retreatform_defines.inc file.
  */
 
@@ -36,27 +36,6 @@ function option1_remaining() {
   return $result;
 
 }
-
-/**
- * Computes the number of option 2 slots available.
- */
-// function option2_remaining() {
-
-//   $query = new EntityFieldQuery();
-//   $query->entityCondition('entity_type', 'node')
-//     ->entityCondition('bundle', 'retreat_registration')
-//     ->propertyCondition('status', 1)
-//     ->fieldCondition('field_room_option', 'value', OPTION_2, '=')
-//     ->fieldCondition('field_cancelled', 'value', 0, '=')
-//     ->fieldCondition('field_year_of_retreat', 'value', YEAR, '=');
-
-//   $result = $query->count()->execute();
-  
-//   $result = check_plain(options_totals('OPTION_2') - $result);
-  
-//   return $result;
-
-// }
 
 /**
  * Computes the number of option 3 slots available.
@@ -180,25 +159,6 @@ function option1_registrations() {
   return $result;
 
 }
-
-/**
- * Computes the number of option 2 registrations.
- */
-// function option2_registrations() {
-
-//   $query_total = new EntityFieldQuery();
-//   $query_total->entityCondition('entity_type', 'node')
-//     ->entityCondition('bundle', 'retreat_registration')
-//     ->propertyCondition('status', 1)
-//     ->fieldCondition('field_room_option', 'value', OPTION_2, '=')
-//     ->fieldCondition('field_cancelled', 'value', 0, '=')
-//     ->fieldCondition('field_year_of_retreat', 'value', YEAR, '=');
- 
-//   $result = $query_total->count()->execute();
-  
-//   return $result;
-
-// }
 
 /**
  * Computes the number of option 3 registrations.

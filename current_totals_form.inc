@@ -1,7 +1,7 @@
 <?php
 
 /**
- * This form displays the current totals for each option
+ * This form displays the current registratin totals for each option
  * as well as total overall
  *
  */
@@ -45,14 +45,6 @@ function form_current_totals($form, &$form_state) {
     '#suffix' => '</p>',
     '#markup' => t('Private Room: @total', array('@total' => $total_1)),
   );
-
-  // if (OPT_2_OPTION == 'Yes') {
-  //   $form['option_2_total'] = array(
-  //     '#prefix' => '<p style="text-align: left; font-weight: bold;">',
-  //     '#suffix' => '</p>',
-  //     '#markup' => t('Private Room shared bath: @total', array('@total' => $total_2)),
-  //   );
-  // }
 
   $form['option_3_total'] = array(
     '#prefix' => '<p style="text-align: left; font-weight: bold;">',
@@ -124,14 +116,6 @@ function form_current_totals($form, &$form_state) {
     '#suffix' => '</p>',
     '#markup' => t('Private Room: @remaining', array('@remaining' => option1_remaining())),
   );
-
-  // if (OPT_2_OPTION == 'Yes') {
-  //   $form['option_2_available'] = array(
-  //     '#prefix' => '<p style="text-align: left; font-weight: bold;">',
-  //     '#suffix' => '</p>',
-  //     '#markup' => t('Private Room shared bath: @remaining', array('@remaining' => option2_remaining())),
-  //   );
-  // }
 
   $form['option_3_available'] = array(
     '#prefix' => '<p style="text-align: left; font-weight: bold;">',

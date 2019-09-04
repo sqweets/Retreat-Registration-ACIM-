@@ -21,7 +21,6 @@ function form_individual_email($form, &$form_state) {
     '#options' => all_registrants_by_last_name(),
     '#required' => TRUE,
   );
-
   $form['subject'] = array(
     '#type' => 'textfield',
     '#title' => t('Subject'),
@@ -40,7 +39,6 @@ function form_individual_email($form, &$form_state) {
     '#type' => 'textarea',
     '#title' => t('Message'),
   );
-
   $form['send_emails'] = array(
     '#type' => 'submit',
     '#value' => t('SEND message'),

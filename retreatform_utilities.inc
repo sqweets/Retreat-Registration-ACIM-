@@ -46,13 +46,6 @@ function room_costs($option) {
         $payment = OPTION_1_COST;
       }
       break;
-    // case OPTION_2:
-    //   if ($apply_eb_rate == 'Yes' && EB_OPTION == 'Yes') {
-    //     $payment = OPTION_2_COST + EB_COST;
-    //   } else {
-    //     $payment = OPTION_2_COST;
-    //   }
-    //   break;
     case OPTION_3:
       if ($apply_eb_rate == 'Yes' && EB_OPTION == 'Yes') {
         $payment = OPTION_3_COST + SHARED_RM_EB_COST;
@@ -123,24 +116,6 @@ function options_rooms() {
         OPTION_6 => t(OPTION_6),
       );
     }
-    // } else if (SATURDAY == 'No' && OPT_2_OPTION == 'Yes') {
-    //   return array(
-    //     OPTION_1 => t(OPTION_1),
-    //     OPTION_2 => t(OPTION_2),
-    //     OPTION_3 => t(OPTION_3),
-    //     OPTION_4 => t(OPTION_4),
-    //     OPTION_6 => t(OPTION_6),
-    //   );
-    // } else if (SATURDAY == 'Yes' && OPT_2_OPTION == 'Yes') {
-    //   return array(
-    //     OPTION_1 => t(OPTION_1),
-    //     OPTION_2 => t(OPTION_2),
-    //     OPTION_3 => t(OPTION_3),
-    //     OPTION_4 => t(OPTION_4),
-    //     OPTION_5 => t(OPTION_5),
-    //     OPTION_6 => t(OPTION_6),
-    //   );
-    // }
   } else {
     // if (SATURDAY == 'No' && OPT_2_OPTION == 'No') {
     if (SATURDAY == 'No') {
@@ -157,22 +132,6 @@ function options_rooms() {
         OPTION_5 => t(OPTION_5),
       );
     }
-    // } else if (SATURDAY == 'No' && OPT_2_OPTION == 'Yes') {
-    //   return array(
-    //     OPTION_1 => t(OPTION_1),
-    //     OPTION_2 => t(OPTION_2),
-    //     OPTION_3 => t(OPTION_3),
-    //     OPTION_4 => t(OPTION_4),
-    //   );
-    // } else if (SATURDAY == 'Yes' && OPT_2_OPTION == 'Yes') {
-    //   return array(
-    //     OPTION_1 => t(OPTION_1),
-    //     OPTION_2 => t(OPTION_2),
-    //     OPTION_3 => t(OPTION_3),
-    //     OPTION_4 => t(OPTION_4),
-    //     OPTION_5 => t(OPTION_5),
-    //   );
-    // }
   }
 }
 
@@ -255,28 +214,6 @@ function options_totals($option) {
       } else {
         ++$count_2_bed;
       }
-
-
-/*
-      // Count the number of the requested room type
-      if ($option == $value['room_type']) {
-        ++$count;
-      }
-        
-      // If counting OPTION_1 rooms, add all OPTION_3 rooms set to 1 bed
-      if (($option == 'OPTION_1') && (($value['room_type'] == 'OPTION_3') && ($value['number_of_beds'] == 1))) {
-        ++$count;
-      }
-      
-      // If counting OPTION_3 rooms, subtract all OPTION_3 rooms set to 1 bed
-      if (($option == 'OPTION_3') && (($value['room_type'] == 'OPTION_3') && ($value['number_of_beds'] == 1))) {
-        --$count;
-      }
-
-      // The guest room is considered an option 1 room    
-      if (($option == 'OPTION_1') && ($value['room_type'] == 'OTHER')) {
-        ++$count;
-      } */
     }
   }
   

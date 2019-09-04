@@ -22,202 +22,14 @@
 require_once("retreatform_defines.inc");
 require_once("retreatform_utilities.inc");
 require_once("retreatform_database.inc");
-require_once("retreatform_mail.inc");
-  
-/**
- * International registration (Canada default)
- */
-function form_registration_intl($form, &$form_state) {
-
-  // If all registrations close, don't display the form, just messages
-  if (RETREAT_COMMUTER_REG_MET != 'Yes') {
-
-    // Display page 2 if $form_state['page_num'] == 2
-    if (!empty($form_state['page_num']) && $form_state['page_num'] == 2) {
-      return form_registration_page_two($form, $form_state);
-    }
-    // Display page 3 if $form_state['page_num'] == 3
-    if (!empty($form_state['page_num']) && $form_state['page_num'] == 3) {
-      return form_registration_page_three_intl($form, $form_state);
-    }
-
-    // Otherwise we build page 1.
-    $form_state['page_num'] = 1;
-    
-    // Need an all options full check here?
-    $form['description_page1'] = array(
-      '#type' => 'item',
-      '#title' => t('<< Page 1 of 3 >>'),
-    );
-    
-    // Setup header message based on which dates met and which options configured
-    // Totally closed is checked above.
-    if (EB_OPTION == 'No' && LODGING_DEADLINE_OPTION == 'No') {
-      if (RETREAT_COMMUTER_REG_MET == 'No') {
-        $form['one_deadline_headline'] = array(
-            '#markup' => t('<p style="text-align: center;"><br><span style="font-size: 16px;"><strong>Registration Deadline is !commuter_date</strong></span></p></br>', array('!commuter_date' => RETREAT_COMMUTER_DEADLINE)),
-        );
-      }
-    } else if (EB_OPTION == 'Yes' && LODGING_DEADLINE_OPTION == 'No') {
-      if (RETREAT_EB_REG_MET == 'No') {
-        // Early bird date not yet met
-        $form['pre_eb_header'] = array(
-            '#markup' => t('<h2 style="text-align: center;">Early Bird Registration Rate Deadline is !eb_date</h2><p style="text-align: center;"><span style="font-size: 16px;">(Your registration form and full payment must be received by that date.)</span></p>
-                            <p style="text-align: center;"><br><span style="font-size: 16px;"><strong>Retreat Registration Deadline is !commuter_date</strong></span></p></br>', array('!eb_date' => RETREAT_EB_DEADLINE, '!commuter_date' => RETREAT_COMMUTER_DEADLINE)),
-        );
-      } else if (RETREAT_COMMUTER_REG_MET == 'No') {
-        $form['one_deadline_headline'] = array(
-            '#markup' => t('<p style="text-align: center;"><br><span style="font-size: 16px;"><strong>Registration Deadline is !commuter_date</strong></span></p></br>', array('!commuter_date' => RETREAT_COMMUTER_DEADLINE)),
-        );
-      }
-    } else if (EB_OPTION == 'No' && LODGING_DEADLINE_OPTION == 'Yes') {
-      if (RETREAT_LODGING_REG_MET == 'No') {
-        $form['post_eb_header'] = array(
-            '#markup' => t('<p style="text-align: center;"><br><span style="font-size: 16px;"><strong>Retreat Lodging Registration Deadline is !lodging_date</strong></span></p>
-                            <p style="text-align: center;"><br><span style="font-size: 16px;"><strong>Retreat Commuter Registration Deadline is !commuter_date</strong></span></p></br>', array('!lodging_date' => RETREAT_LODGING_DEADLINE, '!commuter_date' => RETREAT_COMMUTER_DEADLINE)),
-        );
-      } else if (RETREAT_COMMUTER_REG_MET == 'No') {
-        $form['post_lodging_header'] = array(
-            '#markup' => t('<p style="text-align: center;"><br><span style="font-size: 16px;"><strong>Retreat Commuter Registration Deadline is !commuter_date</strong></span></p></br>', array('!commuter_date' => RETREAT_COMMUTER_DEADLINE)),
-        );
-      }
-    } else {
-      // All options and dates
-      if (RETREAT_EB_REG_MET == 'No') {
-        // Early bird date not yet met
-        $form['pre_eb_header'] = array(
-            '#markup' => t('<h2 style="text-align: center;">Early Bird Registration Rate Deadline is !eb_date</h2><p style="text-align: center;"><span style="font-size: 16px;">(Your registration form and full payment must be received by that date.)</span></p>
-                            <p style="text-align: center;"><br><span style="font-size: 16px;"><strong>Retreat Lodging Registration Deadline is !lodging_date</br>
-                            Retreat Commuter Registration Deadline is !commuter_date</strong></u></span></p></br>', array('!eb_date' => RETREAT_EB_DEADLINE, '!lodging_date' => RETREAT_LODGING_DEADLINE, '!commuter_date' => RETREAT_COMMUTER_DEADLINE)),
-        );
-      } else if (RETREAT_LODGING_REG_MET == 'No') {
-        $form['post_eb_header'] = array(
-            '#markup' => t('<p style="text-align: center;"><br><span style="font-size: 16px;"><strong>Retreat Lodging Registration Deadline is !lodging_date</strong></span></p>
-                            <p style="text-align: center;"><br><span style="font-size: 16px;"><strong>Retreat Commuter Registration Deadline is !commuter_date</strong></span></p></br>', array('!lodging_date' => RETREAT_LODGING_DEADLINE, '!commuter_date' => RETREAT_COMMUTER_DEADLINE)),
-        );
-      } else if (RETREAT_COMMUTER_REG_MET == 'No') {
-        $form['post_lodging_header'] = array(
-            '#markup' => t('<p style="text-align: center;"><br><span style="font-size: 16px;"><strong>Retreat Commuter Registration Deadline is !commuter_date</strong></span></p></br>', array('!commuter_date' => RETREAT_COMMUTER_DEADLINE)),
-        );
-      }
-    }
-
-    $form['description99'] = array(
-      '#markup' => t('<h2 style="text-align: center;"><span style="font-size: 16px;">PLEASE NOTE: If the form has a field that does not apply to your address, please enter "None" in that field.</span></h2></p></br>'),
-    );    
-  
-    $form['contact_info'] = array(
-      '#type' => 'fieldset',
-      '#title' => t('Name and Contact Information'),
-      '#states' => array('visible' => TRUE),
-    );
-    $form['contact_info']['first'] = array(
-      '#type' => 'textfield',
-      '#title' => t('First name'),
-      '#size' => 60,
-      '#maxlength' => 25,
-      '#required' => TRUE,
-      '#default_value' => !empty($form_state['values']['first']) ? t($form_state['values']['first']) : t(''),
-    );
-    $form['contact_info']['last'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Last name'),
-      '#size' => 60,
-      '#maxlength' => 25,
-      '#required' => TRUE,
-      '#default_value' => !empty($form_state['values']['last']) ? t($form_state['values']['last']) : t(''),
-    );
-    $form['contact_info']['address'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Address'),
-      '#size' => 60,
-      '#maxlength' => 25,
-      '#required' => TRUE,
-      '#default_value' => !empty($form_state['values']['address']) ? t($form_state['values']['address']) : t(''),
-    );
-    $form['contact_info']['address2'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Address 2'),
-      '#size' => 60,
-      '#maxlength' => 25,
-      '#default_value' => !empty($form_state['values']['address2']) ? t($form_state['values']['address2']) : t(''),
-    );
-    $form['contact_info']['city'] = array(
-      '#type' => 'textfield',
-      '#title' => t('City'),
-      '#size' => 60,
-      '#maxlength' => 25,
-      '#required' => TRUE,
-      '#default_value' => !empty($form_state['values']['city']) ? t($form_state['values']['city']) : t(''),
-    );
-    $form['contact_info']['state'] = array(
-      '#title' => t('State/Province'),
-      '#type' => 'textfield',
-//      '#options' => options_united_states(),
-      '#size' => 60,
-      '#maxlength' => 25,
-      '#required' => TRUE,
-      '#default_value' => !empty($form_state['values']['state']) ? t($form_state['values']['state']) : t(''),
-    );
-    $form['contact_info']['postal_code'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Zip/Postal Code'),
-      '#size' => 10,
-      '#maxlength' => 10,
-      '#required' => TRUE,
-      '#default_value' => !empty($form_state['values']['postal_code']) ? t($form_state['values']['postal_code']) : t(''),
-    );
-    $form['contact_info']['country'] = array(
-      '#title' => t('Country'),
-      '#type' => 'textfield',
-//      '#options' => options_united_states(),
-      '#size' => 60,
-      '#maxlength' => 25,
-      '#required' => TRUE,
-      '#default_value' => !empty($form_state['values']['country']) ? t($form_state['values']['country']) : t(''),
-    );    
-    $form['contact_info']['phone'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Phone Number'),
-      '#size' => 18,
-      '#maxlength' => 18,
-      '#description' => t('Enter only numbers: 3145551234'),
-      '#required' => TRUE,
-      '#default_value' => !empty($form_state['values']['phone']) ? t($form_state['values']['phone']) : t(''),
-    );
-    $form['contact_info']['email'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Email'),
-      '#size' => 40,
-      '#maxlength' => 40,
-      '#required' => TRUE,
-      '#default_value' => !empty($form_state['values']['email']) ? t($form_state['values']['email']) : t(''),
-    );
-    $form['next_one'] = array(
-      '#type' => 'submit',
-      '#value' => t('Next >>'),
-      '#validate' => array('form_registration_next_validate_intl'),
-      '#submit' => array('form_registration_next_submit'),
-    );
-  } else {
-    $form['reg_closed'] = array(
-      '#markup' => t('<h2 style="text-align: center;">Online registration is now closed.</h2><p style="text-align: center;"><span style="font-size: 14px;"><strong>!retreat_closed_msg</strong></span></p></br>', array('!retreat_closed_msg' => RETREAT_CLOSED_MSG)),
-    );
-  }
-  return $form;
-}
+require_once("retreatform_mail.inc"); 
 
 /**
  * Regular registration
  */
 function form_registration($form, &$form_state) {
 
-/* $form['reginfo']['waitlistmsg'] = array(
-    '#markup' => t('<h2 style="text-align: center;">Registration is now FULL!</h2>  <p style="text-align: center;"><span style="font-size: 14px;"><strong>If you wish to be placed on a waiting list, please contact Nancy Storm at nancystorm@gmail.com or (314) 323-5979 - and please leave a message!</strong></span></p></br>')
-  ); 
-*/
-
-  // If all registrations close, don't display the form, just messages
+  // If all registrations closeed, don't display the form, just messages
   if (RETREAT_COMMUTER_REG_MET != 'Yes') {
 
     // Display page 2 if $form_state['page_num'] == 2
@@ -423,16 +235,7 @@ function form_registration_page_two($form, &$form_state) {
       $form['reginfo']['option'][OPTION_1]['#disabled'] =  FALSE;
       $form['reginfo']['option']['#options'][OPTION_1] = $form['reginfo']['option']['#options'][OPTION_1] . STR_FOR_COST . room_costs(OPTION_1) . t(' - ') . option1_remaining() . t(' available');
     }
-    // Check if option 2 is configured to be available
-    // if (OPT_2_OPTION == 'Yes') {
-    //   if (option2_remaining() <= 0) {
-    //     $form['reginfo']['option'][OPTION_2]['#disabled'] =  TRUE;
-    //     $form['reginfo']['option']['#options'][OPTION_2] = $form['reginfo']['option']['#options'][OPTION_2] . STR_FOR_COST . room_costs(OPTION_2) . t(' - NONE AVAILABLE');
-    //   } else {
-    //     $form['reginfo']['option'][OPTION_2]['#disabled'] =  FALSE;
-    //     $form['reginfo']['option']['#options'][OPTION_2] = $form['reginfo']['option']['#options'][OPTION_2] . STR_FOR_COST . room_costs(OPTION_2) . t(' - ') . option2_remaining() . t(' available');
-    //   }
-    // }
+
     if (option3_remaining() <= 0) {
       $form['reginfo']['option'][OPTION_3]['#disabled'] =  TRUE;
       $form['reginfo']['option']['#options'][OPTION_3] = $form['reginfo']['option']['#options'][OPTION_3] . STR_FOR_COST . room_costs(OPTION_3) . t(' - NONE AVAILABLE');
@@ -516,11 +319,6 @@ function form_registration_page_two($form, &$form_state) {
     }
   }
 
-//  $form['reginfo']['question'] = array(
-//    '#markup' => t('<strong>Please contact Ellen Hendricks at 314-322-8664 or email at ellen.l.hendricks@gmail.com if you wish to register for a private room.  We are no longer taking single shared room registrations.</strong>')
-//    '#markup' => t('<strong>We are no longer taking single shared room registrations.</strong>')
-//    );
-
   if (!empty($form_state['values']['roommate'])) {
     $form['reginfo']['roommate'] = array(
       '#type' => 'select',
@@ -588,13 +386,6 @@ function form_registration_page_two($form, &$form_state) {
     '#default_value' => !empty($form_state['values']['needs_info']) ? t($form_state['values']['needs_info']) : t(''),
   );
 
-  // $form['reginfo']['first_retreat'] = array(
-  //   '#title' => t('Is this the first St. Louis ACIM retreat you have attended?'),
-  //   '#type' => 'select',
-  //   '#options' => array('No' => t('No'), 'Yes' => t('Yes')),
-  //   '#required' => TRUE,
-  //   '#default_value' => !empty($form_state['values']['first_retreat']) ? t($form_state['values']['first_retreat']) : t('No'),
-  // );
   $form['reginfo']['how_heard'] = array(
     '#type' => 'radios',
     '#title' => t('How did you hear about the Retreat?'),
@@ -657,8 +448,6 @@ function form_registration_page_two($form, &$form_state) {
     '#submit' => array('form_registration_page_two_next_submit'),
     '#validate' => array('form_registration_page_two_next_validate'),
   );
-
-  drupal_add_js('jQuery(document).ready(function () { alert("PLEASE NOTE: If you are planning to pay with PayPal, browser security settings can cause the PayPal payment process to fail. Unless you are sure your browser allows \"Redirection\", or you have successfully paid with PayPal for a previous event, please choose to pay via Mail."); });', array('type' => 'inline', 'scope' => 'footer', 'weight' => 5));
 
   return $form;
 }
@@ -831,177 +620,6 @@ function form_registration_page_three($form, &$form_state) {
 
 
 /**
- * Returns the form for the third page of form_registration().
- * This page prints all inputs and asks the user to verify and update as needed.
- */
-function form_registration_page_three_intl($form, &$form_state) {
-  $page_one_values = $form_state['page_values'][1];
-  $page_two_values = $form_state['page_values'][2];
-  
-  // $phone_number['phone_a'] = substr($page_one_values['phone'], 0, 3);
-  // $phone_number['phone_b'] = substr($page_one_values['phone'], 3, 3);
-  // $phone_number['phone_c'] = substr($page_one_values['phone'], 6, 4);
-  
-  $form['description_page3'] = array(
-    '#type' => 'item',
-    '#title' => t('<< Page 3 of 3 >>'),
-  );
-  $form['validate'] = array(
-    '#markup' => t('<p><span style="font-size: 16px;"><strong>Please verify your inputs below and update as needed</strong></span></p><br>'),
-  );
-  
-  $form['contact_info'] = array(
-    '#type' => 'fieldset',
-    '#title' => t('Name and Contact Information'),
-    '#states' => array('visible' => TRUE),
-  );
-  
-  if ($page_one_values['address2'] != '') {
-    $form['contact_info']['print_address'] = array(
-      '#markup' => t("<p>@first @last<br>@address<br>@address2<br>@city, @state   @zip_code<br>@country<br>(@phone1) @phone2-@phone3<br>@email</p>", 
-        array('@first' => $page_one_values['first'],
-              '@last' => $page_one_values['last'],
-              '@address' => $page_one_values['address'],
-              '@address2' => $page_one_values['address2'],
-              '@city' => $page_one_values['city'],
-              '@state' => $page_one_values['state'],
-              '@country' => $page_one_values['country'],
-              '@zip_code' => $page_one_values['postal_code'],
-              '@phone1' => $phone_number['phone_a'],
-              '@phone2' => $phone_number['phone_b'],
-              '@phone3' => $phone_number['phone_c'],
-              '@email' => $page_one_values['email'])),
-    );
-  } else {
-    $form['contact_info']['print_address'] = array(
-      '#markup' => t("<p>@first @last<br>@address<br>@city, @state   @zip_code<br>@country<br>(@phone1) @phone2-@phone3<br>@email</p>", 
-        array('@first' => $page_one_values['first'],
-              '@last' => $page_one_values['last'],
-              '@address' => $page_one_values['address'],
-              '@city' => $page_one_values['city'],
-              '@state' => $page_one_values['state'],
-              '@zip_code' => $page_one_values['postal_code'],
-              '@country' => $page_one_values['country'],
-              '@phone1' => $phone_number['phone_a'],
-              '@phone2' => $phone_number['phone_b'],
-              '@phone3' => $phone_number['phone_c'],
-              '@email' => $page_one_values['email'])),
-    );
-  }
-  
-  // Change button for contact info
-  $form['change_contact'] = array(
-    '#type' => 'submit',
-    '#value' => t('Change Contact Information'),
-    '#submit' => array('form_registration_back_to_page_one'),
-  );
-
-  $form['space1'] = array(
-    '#markup' => t('<br><br>'),
-  );
-
-  $form['registration_info'] = array(
-    '#type' => 'fieldset',
-    '#title' => t('Registration Information'),
-    '#states' => array('visible' => TRUE),
-  );
-  
-  
-  $form['registration_info']['registration1'] = array(
-     '#markup' => t("<p>Room Option:  @option", 
-     array('@option' => $page_two_values['option'] . STR_FOR_COST . room_costs($page_two_values['option']))),
-  );
-
-  if ($page_two_values['option'] == OPTION_3) {
-    if ($page_two_values['roommate'] != 'not matched') {  
-      $roommate_array = options_roommates();
-      $roommate = $roommate_array[$page_two_values['roommate']];
-    } else if ($page_two_values['roommate'] == 'not matched') {
-      $roommate = 'My roommate has not registered yet';
-    } else {
-      $roommate = $page_two_values['roommate'];
-    }
-    
-    $form['registration_info']['registration2'] = array(
-       '#markup' => t("<br>Roommate's Name:  @roommate", 
-       array('@roommate' => $roommate)),
-    );
-  }
-  $form['registration_info']['registration3'] = array(
-     '#markup' => t("<br>Meal Needs:  @meal", 
-     array('@meal' => $page_two_values['meal'])),
-  );
-  if ($page_two_values['meal'] == 'Other (please explain)') {
-    $form['registration_info']['registration4'] = array(
-       '#markup' => t("<br>Meal Details:  @meal_details", 
-       array('@meal_details' => $page_two_values['meal_details'])),
-    );
-  }
-  $form['registration_info']['registrationA'] = array(
-     '#markup' => t("<br>Special Needs:  @special_needs", 
-     array('@special_needs' => $page_two_values['special_needs'])),
-  );
-  if ($page_two_values['special_needs'] == 'Yes') {
-    $form['registration_info']['registrationB'] = array(
-       '#markup' => t("<br>Special Needs Details:  @needs_info", 
-       array('@needs_info' => $page_two_values['needs_info'])),
-    );
-  }
-  
-  if (SCHOLARSHIP_OPTION == 'Yes') {
-    $form['registration_info']['registration5'] = array(
-       '#markup' => t("<br>Donation:  $@donation<br>Form of Payment:  @form_of_payment</p>", 
-       array('@donation' => $page_two_values['donation'],
-             '@form_of_payment' => $page_two_values['form_of_payment'])),
-    );
-  } else {
-    $form['registration_info']['registration5'] = array(
-       '#markup' => t("<br>Form of Payment:  @form_of_payment</p>", 
-       array('@form_of_payment' => $page_two_values['form_of_payment'])),
-    );
-  }
-
-  // change button for registration info
-  $form['change_registration'] = array(
-    '#type' => 'submit',
-    '#value' => t('Change Registration Information'),
-    '#submit' => array('form_registration_back_to_page_two'),
-  );
-
-  $form['space'] = array(
-    '#markup' => t('<br><br><hr />'),
-  );
-
-  if (DISPLAY_SCHOLARSHIP_OPTION == 'No') {
-    $form['instructions'] = array(
-     '#markup' => t('<strong><p>Once you have verified all your inputs are correct you are ready to submit your registration.
-                     <br>If you elected to pay via (PayPal) you will be redirected to the PayPal website.
-                     <br>If you elected to pay via (mail) you will receive a separate form email to print and send with your payment.</p></strong><br>'),
-     );
-  } else {
-    $form['instructions'] = array(
-     '#markup' => t('<strong><p>Once you have verified all your inputs are correct you are ready to submit your registration.
-                     <br>If you elected to pay via (PayPal) you will be redirected to the PayPal website.
-                     <br>If you elected to pay via (mail) you will receive a separate form email to print and send with your payment.
-                     <br>If you elected to request a (scholarship) you will be redirected to the scholarship application form.</p></strong><br>'),
-     );
-  }
-  
-  $form['submit'] = array(
-    '#prefix' => '<div class="registration-submit">',
-    '#suffix' => '</div>',
-    '#type' => 'submit',
-    '#value' => t('<< Submit Registration >>'),
-    '#submit' => array('form_registration_page_three_submit_intl'),
-  );
-
-  return $form;
-}
-
-
-
-
-/**
  * Validate handler for the next button on first page.
  */
 function form_registration_next_validate($form, &$form_state) {
@@ -1030,34 +648,6 @@ function form_registration_next_validate($form, &$form_state) {
     form_set_error('email', t("Please see the \"Where to Get Help\" option in the Retreat Menu if your registration isn't a duplicate."));
   }
 }
-
-
-/**
- * Validate handler for the next button on first page.
- */
-function form_registration_next_validate_intl($form, &$form_state) {
-
-  $phone = $form_state['values']['phone'];
-  if (!is_numeric($phone)) {
-    form_set_error('phone', t('Please only enter numbers for the phone number.'));
-  }
-  
-  $email = $form_state['values']['email'];
-  if (!valid_email_address($email)) {
-    form_set_error('email', t('Please enter a valid email address.'));
-  }
-  
-  // Check for duplicate entry
-  $identity = array('first' => $form_state['values']['first'],
-                    'last' => $form_state['values']['last'],
-                    'email' => $form_state['values']['email']);
-  if (match_entry($identity) != 0) {
-    form_set_error('first', t('There is already an entry in the database for that first name, '));
-    form_set_error('last', t('last name and email address.'));
-    form_set_error('email', t("Please see the \"Where to Get Help\" option in the Retreat Menu if your registration isn't a duplicate."));
-  }
-}
-
 
 
 /**
@@ -1323,203 +913,7 @@ function form_registration_page_three_submit($form, &$form_state) {
 
     node_save($node);
 
-    // Match roommates and store the roommate in the form_state array so its available for email
-    if (($page_two_values['option'] == OPTION_3) && ($page_two_values['roommate'] != 'not matched')) {
-      $form_state['page_values'][2]['roommate'] = match_roommates($node);
-    }
-
-    // Send out confirmation email
-    $result = email_confirm_send($form_state['page_values']);
-    
-    // Log results for sending email
-    if ($result['result'] == TRUE) {
-      watchdog('retreatform', t("Confirmation email for %first_name %last_name sent"),
-               array ('%first_name' => $page_one_values['first'], '%last_name' => $page_one_values['last']), WATCHDOG_NOTICE);
-    } else {
-      watchdog('retreatform', t("ERROR sending confirmation email for %first_name %last_name"),
-               array ('%first_name' => $page_one_values['first'], '%last_name' => $page_one_values['last']), WATCHDOG_ERROR);
-    }
-    
-    // Send form email
-    if ($page_two_values['form_of_payment'] == 'Mail') {
-      email_form_send($form_state['page_values']);
-    }
-    
-    // Log results for sending email
-    if ($result['result'] == TRUE) {
-      watchdog('retreatform', t("Form email for %first_name %last_name sent"),
-               array ('%first_name' => $page_one_values['first'], '%last_name' => $page_one_values['last']), WATCHDOG_NOTICE);
-    } else {
-      watchdog('retreatform', t("ERROR sending form email for %first_name %last_name"),
-               array ('%first_name' => $page_one_values['first'], '%last_name' => $page_one_values['last']), WATCHDOG_ERROR);
-    }
-
-    // Send to paypal
-    if ($page_two_values['form_of_payment'] == 'PayPal') {
-      paypal_registration($page_one_values, $page_two_values);
-    }
-
-    // Send to scholarship application
-    if ($page_two_values['form_of_payment'] == 'Scholarship') {
-      drupal_goto('content/ruth-hanna-scholarship-fund-application');
-    }
-    
     drupal_set_message(t('Your registration has been submitted.'));
-  }
-  else {
-    drupal_set_message(t('Your registration is already recorded.'), 'error');
-  }
-    // Redirect on submission, set $form_state['redirect']
-    $form_state['redirect'] = 'content/thank-you';
-}
-
-
-/**
- * The page 3 submit handler.
- *
- * This is the final submit handler. The form data is saved to a node,
- * the confirmation email is sent and the user is redirected to either
- * paypal or a printable form.
- */
-function form_registration_page_three_submit_intl($form, &$form_state) {
-  $page_one_values = $form_state['page_values'][1];
-  $page_two_values = $form_state['page_values'][2];
-  
-  // Check for duplicate entry
-  $identity = array('first' => $page_one_values['first'],
-                    'last' => $page_one_values['last'],
-                    'email' => $page_one_values['email']);
-  if (match_entry($identity) == 0) {
-    // Create a node object and save it
-    $node = new stdClass();
-    $node->type = 'retreat_registration';
-    node_object_prepare($node);
-  
-    // save title as lastname, firstname
-    $node->title    = $page_one_values['last'] . ', ' . $page_one_values['first'];
-    $node->language = LANGUAGE_NONE;
-
-    // save retreat year
-    $node->field_year_of_retreat[$node->language][0]['value']    = YEAR;
-    // save the current date
-    $today = getdate();
-    $today_str = $today['mon'] . '/' . $today['mday'] . '/' . $today['year'];
-    $node->field_registration_date[$node->language][0]['value'] = $today_str;
-    // save form values
-    $node->field_first_name[$node->language][0]['value']    = $page_one_values['first'];
-    $node->field_last_name[$node->language][0]['value']     = $page_one_values['last'];
-    $node->field_address[$node->language][0]['value']       = $page_one_values['address'];
-    $node->field_address_2[$node->language][0]['value']     = $page_one_values['address2'];
-    $node->field_city[$node->language][0]['value']          = $page_one_values['city'];
-    $node->field_state[$node->language][0]['value']         = $page_one_values['state'];
-    $node->field_country[$node->language][0]['value']       = $page_one_values['country'];
-    $node->field_postal_code[$node->language][0]['value']   = $page_one_values['postal_code'];
-    $node->field_phone_number[$node->language][0]['value']  = $page_one_values['phone'];
-    $node->field_email_address[$node->language][0]['value'] = $page_one_values['email'];
-    $node->field_room_option[$node->language][0]['value']   = $page_two_values['option'];
-    $node->field_roommate[$node->language][0]['value']      = $page_two_values['roommate'];
-    $node->field_meal_needs[$node->language][0]['value']    = $page_two_values['meal'];
-    $node->field_meal_info[$node->language][0]['value']     = $page_two_values['meal_details'];
-    $node->field_special_needs[$node->language][0]['value'] = $page_two_values['special_needs'];
-    $node->field_needs_info[$node->language][0]['value']    = $page_two_values['needs_info'];
-    
-    if (SCHOLARSHIP_OPTION == 'Yes') {
-      $node->field_donation[$node->language][0]['value']      = $page_two_values['donation'];
-    } else {
-      $node->field_donation[$node->language][0]['value']      = 0;
-    }
-    $node->field_first_retreat[$node->language][0]['value'] = $page_two_values['first_retreat'];
-    $node->field_heard[$node->language][0]['value']         = $page_two_values['how_heard'];
-    $node->field_heard_other_text[$node->language][0]['value']  = $page_two_values['how_heard_other_text'];
-    $node->field_form_payment[$node->language][0]['value']  = $page_two_values['form_of_payment'];
-    
-    if ($page_two_values['option'] == OPTION_4) {
-      $node->field_room_number[$node->language][0]['value']  = 'Commuter';
-    }
-    
-    if ($page_two_values['option'] == OPTION_5) {
-      $node->field_room_number[$node->language][0]['value']  = 'Saturday Commuter';
-    }
-
-    if ($page_two_values['option'] == OPTION_6) {
-      $node->field_room_number[$node->language][0]['value']  = 'Saturday Half Day';
-    }
-
-    // Compute total due
-    if (SCHOLARSHIP_OPTION == 'Yes') {
-      $total = t("(@total)", array('@total' => (room_costs($page_two_values['option']) + intval($page_two_values['donation']))));
-    } else {
-      $total = t("(@total)", array('@total' => (room_costs($page_two_values['option']))));
-    }
-    
-    $node->field_payment_received[$node->language][0]['value']  = $total;
-    
-    $path = 'content/programmatically_created_node_' . date('YmdHis');
-    $node->path = array('alias' => $path);
-
-    // Set scholarship checkboxes
-    if ($page_two_values['form_of_payment'] == 'Scholarship') {
-      $node->field_scholarship_received[$node->language][0]['value'] = '1';
-      $node->field_don_t_send_payment_recieve[$node->language][0]['value'] = '1';
-    }
-    
-    // Log registration with all data
-    if (SCHOLARSHIP_OPTION == 'Yes') {
-      watchdog('retreatform', t("Attempting save of registration for
-                              %first_name %last_name:%address|%address2|%city|%state|%country|%zip_code|
-                              %phone|%email|%option|%roommate|%meal|%meal_details|%special_needs|%needs_info|
-                              %donation|%how_heard|%form_of_payment"),
-                              array(
-                              '%first_name' => $page_one_values['first'],
-                              '%last_name' => $page_one_values['last'],
-                              '%address' => $page_one_values['address'],
-                              '%address2' => $page_one_values['address2'],
-                              '%city' => $page_one_values['city'],
-                              '%state' => $page_one_values['state'],
-                              '%country' => $page_one_values['country'],
-                              '%zip_code' => $page_one_values['postal_code'],
-                              '%phone' => $page_one_values['phone'],
-                              '%email' => $page_one_values['email'],
-                              '%option' => $page_two_values['option'],
-                              '%roommate' => $page_two_values['roommate'],
-                              '%meal' => $page_two_values['meal'],
-                              '%meal_details' => $page_two_values['meal_details'],
-                              '%special_needs' => $page_two_values['special_needs'],
-                              '%needs_info' => $page_two_values['needs_info'],
-                              '%donation' => $page_two_values['donation'],
-                              '%first_retreat' => $page_two_values['first_retreat'],
-                              '%how_heard' => $page_two_values['how_heard'],
-                              '%form_of_payment' => $page_two_values['form_of_payment']),
-                              WATCHDOG_NOTICE);
-    } else {
-      watchdog('retreatform', t("Attempting save of registration for
-                              %first_name %last_name:%address|%address2|%city|%state|%country|%zip_code|
-                              %phone|%email|%option|%roommate|%meal|%meal_details|%special_needs|%needs_info|
-                              %how_heard|%form_of_payment"),
-                              array(
-                              '%first_name' => $page_one_values['first'],
-                              '%last_name' => $page_one_values['last'],
-                              '%address' => $page_one_values['address'],
-                              '%address2' => $page_one_values['address2'],
-                              '%city' => $page_one_values['city'],
-                              '%state' => $page_one_values['state'],
-                              '%country' => $page_one_values['country'],
-                              '%zip_code' => $page_one_values['zip_code'],
-                              '%phone' => $page_one_values['phone'],
-                              '%email' => $page_one_values['email'],
-                              '%option' => $page_two_values['option'],
-                              '%roommate' => $page_two_values['roommate'],
-                              '%meal' => $page_two_values['meal'],
-                              '%meal_details' => $page_two_values['meal_details'],
-                              '%special_needs' => $page_two_values['special_needs'],
-                              '%needs_info' => $page_two_values['needs_info'],
-                              '%first_retreat' => $page_two_values['first_retreat'],
-                              '%how_heard' => $page_two_values['how_heard'],
-                              '%form_of_payment' => $page_two_values['form_of_payment']),
-                              WATCHDOG_NOTICE);
-    }
-
-    node_save($node);
 
     // Match roommates and store the roommate in the form_state array so its available for email
     if (($page_two_values['option'] == OPTION_3) && ($page_two_values['roommate'] != 'not matched')) {
@@ -1552,17 +946,14 @@ function form_registration_page_three_submit_intl($form, &$form_state) {
                array ('%first_name' => $page_one_values['first'], '%last_name' => $page_one_values['last']), WATCHDOG_ERROR);
     }
 
-    // Send to paypal
-    if ($page_two_values['form_of_payment'] == 'PayPal') {
-      paypal_registration_intl($page_one_values, $page_two_values);
-    }
-
     // Send to scholarship application
     if ($page_two_values['form_of_payment'] == 'Scholarship') {
       drupal_goto('content/ruth-hanna-scholarship-fund-application');
     }
-    
-    drupal_set_message(t('Your registration has been submitted.'));
+
+    // PayPal processing here
+    // Build data and save in session
+    build_paypal_form_data($page_one_values, $page_two_values);
   }
   else {
     drupal_set_message(t('Your registration is already recorded.'), 'error');
@@ -1572,127 +963,73 @@ function form_registration_page_three_submit_intl($form, &$form_state) {
 }
 
 
-
 /**
- * Submits information to paypal and sends user to paypal
+ * Builds the hidden form payment button then redirects to the page that has the hidden form 
+ * and payment button
  *
  * Preliminary notes:
  *  - PayPal expects a state code in 2-digit caps (no full names)
  *  - Need to break phone number into three strings... [area] [3-digits] [4-digits]
- *  - https://www.paypal.com/cgi-bin/webscr?cmd=_pdn_xclick_prepopulate_outside
  */
-function paypal_registration($page_one_values, $page_two_values) {
-  $paypal = array();
- 
-  // Add option and donation to the cart
-  $paypal['cmd'] = '_cart';
-  $paypal['upload'] = "1";
-  $paypal['business'] = 'payments@acimstlouis.org';  // PayPal account email
+function build_paypal_form_data($page_one_values, $page_two_values) {
 
+  $total_paymemt = room_costs($page_two_values['option']) + intval($page_two_values['donation']);
+  $registration_fee = room_costs($page_two_values['option']);
+  $donation = intval($page_two_values['donation']);
+  $night_phone_a = intval(substr($page_one_values['phone'], 0, 3));
+  $night_phone_b = intval(substr($page_one_values['phone'], 3, 3));
+  $night_phone_c = intval(substr($page_one_values['phone'], 6, 4));
 
-  $paypal['page_style'] = 'primary'; // Set this in PayPal prefs, then change here (default = paypal)
-  $paypal['no_shipping'] = '1'; // Don't prompt user for shipping address
-  $paypal['no_note'] = '1'; // Don't prompt user for extra information (note)
-  $paypal['tax'] = '0'; // No tax for this payment
-  $paypal['rm'] = '1'; // Return method - 1 = browser redirected to return URL by GET method w/o variables
-  $paypal['return'] = 'http://acimstlouis.org/content/thank-you'; // Page to which user is returned <<!!>>
+  // Form setup
+  $block_code .= "<form action='https://www.sandbox.paypal.com/cgi-bin/webscr' method='post'>";
+  $block_code .= "<input type='hidden' name='cmd' value='_cart' />";
+  $block_code .= "<input type='hidden' name='business' value='elh.payment.testing@gmail.com' />";
+  $block_code .= "<input type='hidden' name='item_name' value='Retreat Registration' />";
+  $block_code .= "<input type='hidden' name='currency_code' value='USD' />";
+  $block_code .= "<input type='hidden' name='bn' value='PP-BuyNowACIM'>";
+  $block_code .= "<input type='hidden' name='tax' value='0.00' />";
+  $block_code .= "<input type='hidden' name='tax_rate' value='0.00' />";
+  $block_code .= "<input type='hidden' name='notify_url' value='https://acimstlouis.org/ipn'>";
+  $block_code .= "<input type='hidden' name='lc' value='en_US'>";
+  $block_code .= "<input type='hidden' name='cancel_return' value='https://acimstlouis.org/retreat_registration' />";
+  $block_code .= "<input type='hidden' name='return' value='https://acimstlouis.org/content/thank-you' />";
+  $block_code .= "<input type='hidden' name='no_shipping' value='1' />";
+  $block_code .= "<input type='hidden' name='no_note' value='1' />";
+  $block_code .= "<input type='hidden' name='upload' value='1' />";
+  $block_code .= "<input type='hidden' name='first_name' value='{$page_one_values['first']}' />";
+  $block_code .= "<input type='hidden' name='last_name' value='{$page_one_values['last']}' />";
+  $block_code .= "<input type='hidden' name='address1' value='{$page_one_values['address']}' />";
+  $block_code .= "<input type='hidden' name='city' value='{$page_one_values['city']}' />";
+  $block_code .= "<input type='hidden' name='state' value='{$page_one_values['state']}' />";
+  $block_code .= "<input type='hidden' name='zip' value='{$page_one_values['zip_code']}' />";
+  $block_code .= "<input type='hidden' name='country' value='US' />";
+  $block_code .= "<input type='hidden' name='night_phone_a' value='{$night_phone_a}' />";
+  $block_code .= "<input type='hidden' name='night_phone_b' value='{$night_phone_b}' />";
+  $block_code .= "<input type='hidden' name='night_phone_c' value='{$night_phone_c}' />";
+  $block_code .= "<input type='hidden' name='email' value='{$page_one_values['email']}' />";
 
+  // Add item(s) to cart
+  $block_code .= "<input type='hidden' name='item_name_1' value='Registration'>";
+  $block_code .= "<input type='hidden' name='amount_1' value='$registration_fee'>";
+  $block_code .= "<input type='hidden' name='item_number_1' value='registration'>";
+  $block_code .= "<input type='hidden' name='quantity_1' value='1'>";
 
-  $paypal['item_name_1'] = $page_two_values['option'];
-  $paypal['amount_1'] = room_costs($page_two_values['option']);
-  
-  if (SCHOLARSHIP_OPTION == 'Yes') {
-    if ($page_two_values['donation'] != "0") {
-      // Add option to the cart
-      $paypal['item_name_2'] = "Donation";
-      $paypal['amount_2'] = intval($page_two_values['donation']);
-    }
+  if ($donation <> 0) {    
+    $block_code .= "<input type='hidden' name='item_name_2' value='Donation'>";
+    $block_code .= "<input type='hidden' name='amount_2' value='$donation'>";
+    $block_code .= "<input type='hidden' name='item_number_2' value='donation'>";
+    $block_code .= "<input type='hidden' name='quantity_2' value='1'>";
   }
 
-  // Send contact info to paypal  
-  //$paypal['bn'] = 'GM_Donate_WPS_US'; // See PayPal docs on proper formatting - not required, though
-  $paypal['address1'] = $page_one_values['address'];
-  $paypal['address2'] = $page_one_values['address2'];
-  $paypal['city'] = $page_one_values['city'];
-  $paypal['country'] = 'US';
-  $paypal['email'] = $page_one_values['email'];
-  $paypal['first_name'] = $page_one_values['first'];
-  $paypal['last_name'] = $page_one_values['last'];
-  $paypal['night_phone_a'] = intval(substr($page_one_values['phone'], 0, 3));
-  $paypal['night_phone_b'] = intval(substr($page_one_values['phone'], 3, 3));
-  $paypal['night_phone_c'] = intval(substr($page_one_values['phone'], 6, 4));
-  $paypal['state'] = $page_one_values['state'];
-  $paypal['zip'] = $page_one_values['zip_code'];
+  // Add button code
+  $block_code .= "<input type='image' name='submit' src='https://www.paypalobjects.com/webstatic/en_US/i/buttons/checkout-logo-large.png' alt='Check out with PayPal'>";
+  $block_code .= "</form></div>";
 
-  // Build the URL/query for PayPal payment form.
-  $query = http_build_query($paypal, '', '&');
-  
-//  dpm($query);
-  
-  $url = 'https://www.paypal.com/cgi-bin/webscr?' . $query;
+  // Save form to Session
+  $_SESSION['paypal_form'] = $block_code;
 
-  // Redirect user to PayPal...
-  drupal_goto($url);
+  // Redirect to paypal payment page
+  drupal_goto('content/paypal-payment-page');
 }
 
-/**
- * Submits information to paypal and sends user to paypal
- *
- * Preliminary notes:
- *  - PayPal expects a state code in 2-digit caps (no full names)
- *  - Need to break phone number into three strings... [area] [3-digits] [4-digits]
- *  - https://www.paypal.com/cgi-bin/webscr?cmd=_pdn_xclick_prepopulate_outside
- */
-function paypal_registration_intl($page_one_values, $page_two_values) {
-  $paypal = array();
- 
-  // Add option and donation to the cart
-  $paypal['cmd'] = '_cart';
-  $paypal['upload'] = "1";
-  $paypal['business'] = 'payments@acimstlouis.org';  // PayPal account email
 
-
-  $paypal['page_style'] = 'primary'; // Set this in PayPal prefs, then change here (default = paypal)
-  $paypal['no_shipping'] = '1'; // Don't prompt user for shipping address
-  $paypal['no_note'] = '1'; // Don't prompt user for extra information (note)
-  $paypal['tax'] = '0'; // No tax for this payment
-  $paypal['rm'] = '1'; // Return method - 1 = browser redirected to return URL by GET method w/o variables
-  $paypal['return'] = 'http://acimstlouis.org/content/thank-you'; // Page to which user is returned <<!!>>
-
-
-  $paypal['item_name_1'] = $page_two_values['option'];
-  $paypal['amount_1'] = room_costs($page_two_values['option']);
-  
-  if (SCHOLARSHIP_OPTION == 'Yes') {
-    if ($page_two_values['donation'] != "0") {
-      // Add option to the cart
-      $paypal['item_name_2'] = "Donation";
-      $paypal['amount_2'] = intval($page_two_values['donation']);
-    }
-  }
-
-  // Send contact info to paypal  
-  //$paypal['bn'] = 'GM_Donate_WPS_US'; // See PayPal docs on proper formatting - not required, though
-  $paypal['address1'] = $page_one_values['address'];
-  $paypal['address2'] = $page_one_values['address2'];
-  $paypal['city'] = $page_one_values['city'];
-  $paypal['country'] = $page_one_values['country'];
-  $paypal['email'] = $page_one_values['email'];
-  $paypal['first_name'] = $page_one_values['first'];
-  $paypal['last_name'] = $page_one_values['last'];
-  $paypal['night_phone_a'] = intval(substr($page_one_values['phone'], 0, 3));
-  $paypal['night_phone_b'] = intval(substr($page_one_values['phone'], 3, 3));
-  $paypal['night_phone_c'] = intval(substr($page_one_values['phone'], 6, 4));
-//  $paypal['state'] = $page_one_values['state'];
-//  $paypal['zip'] = $page_one_values['postal_code'];
-
-  // Build the URL/query for PayPal payment form.
-  $query = http_build_query($paypal, '', '&');
-  
-//  dpm($query);
-  
-  $url = 'https://www.paypal.com/cgi-bin/webscr?' . $query;
-
-  // Redirect user to PayPal...
-  drupal_goto($url);
-}

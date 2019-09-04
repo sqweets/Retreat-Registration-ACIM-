@@ -4,7 +4,6 @@
  * This file contains the form for resending the registration emails.
  */
 
-
 require_once("retreatform_defines.inc");
 require_once("retreatform_mail.inc");
 require_once("retreatform_utilities.inc");

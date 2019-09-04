@@ -81,14 +81,6 @@ function retreatform_config_form($form, &$form_state) {
     '#default_value' => variable_get('lodging_deadline_option', 'Yes'),
   );
 
-  // $form['options']['option_2_option'] = array(
-  //   '#title' => t('Check YES to enable Private Room w/Shared Bath option'),
-  //   '#type' => 'select',
-  //   '#options' => array('No' => t('No'), 'Yes' => t('Yes')),
-  //   '#required' => TRUE,
-  //   '#default_value' => variable_get('option_2_option', 'Yes'),
-  // );
-
   $form['options']['saturday_halfday_option'] = array(
     '#title' => t('Check YES to add the Saturday Half Day Option to the registration'),
     '#type' => 'select',
@@ -346,19 +338,6 @@ function retreatform_config_form($form, &$form_state) {
     '#default_value' => variable_get('private_rm_earlybird_cost', '50'),
   );
 
-  // $form['costs_info']['shared_bathroom_cost'] = array(
-  //   '#type' => 'textfield',
-  //   '#title' => t('Cost of a Shared Bath Room'),
-  //   '#size' => 4,
-  //   '#maxlength' => 4,
-  //   '#states' => array(
-  //     'visible' => array(
-  //       ':input[name="option_2_option"]' => array('value' => 'Yes'),
-  //     ),
-  //   ),
-  //   '#required' => TRUE,
-  //   '#default_value' => variable_get('shared_bathroom_cost', '300'),
-  // );
   $form['costs_info']['shared_room_cost'] = array(
     '#type' => 'textfield',
     '#title' => t('Cost of a Shared Room'),
@@ -435,19 +414,6 @@ function retreatform_config_form($form, &$form_state) {
     '#required' => TRUE,
     '#default_value' => variable_get('saturday_halfday_cost', '200'),
   );
-  // $form['costs_info']['earlybird_cost'] = array(
-  //   '#type' => 'textfield',
-  //   '#title' => t('Increase in Cost After Early Bird Deadline'),
-  //   '#size' => 4,
-  //   '#maxlength' => 4,
-  //   '#states' => array(
-  //     'visible' => array(
-  //       ':input[name="eb_option"]' => array('value' => 'Yes'),
-  //     ),
-  //   ),
-  //   '#required' => TRUE,
-  //   '#default_value' => variable_get('earlybird_cost', '50'),
-  // );
   
   // Setup totals
   $form['setup_totals'] = array(
@@ -547,10 +513,6 @@ function form_retreat_config_validate($form, &$form_state) {
   if (!is_numeric($form_state['values']['private_room_cost'])) {  
     form_set_error('private_room_cost', t('Please enter a valid private room cost.'));
   }
-
-  // if (!is_numeric($form_state['values']['shared_bathroom_cost'])) {  
-  //   form_set_error('shared_bathroom_cost', t('Please enter a valid shared bath cost.'));
-  // }
 
   if (!is_numeric($form_state['values']['shared_room_cost'])) {  
     form_set_error('shared_room_cost', t('Please enter a valid shared room cost.'));

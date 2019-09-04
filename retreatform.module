@@ -29,17 +29,6 @@ function retreatform_menu() {
     'file' => 'retreatform_form.inc',
   );
   
-  $items['retreat_registration_intl'] = array(
-    'title' => t('Registration Form (International)'),
-    'menu_name' => 'menu-2012-retreat',
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('form_registration_intl'),
-    'access callback' => TRUE,
-    'description' => t('Registration Form (International)'),
-    'type' => MENU_NORMAL_ITEM,
-    'file' => 'retreatform_form.inc',
-  );
-
   $items['resend_email'] = array(
     'title' => t('Resend Email(s)'),
     'menu_name' => 'menu-retreat-email-tools',
@@ -190,33 +179,6 @@ function retreatform_init() {
       variable_set('initialized_2nd_floor', TRUE);
     }
   }
-
-  // Put up popup warning if leaving first or second floor pages without saving
-//  if ($path == 'manage_rooms/1') {
-//    drupal_add_js("jQuery(document).ready(function () {
-//      jQuery('.form_submit').click(function(e) {
-//        window.form_submit = true;
-//      });
-//      jQuery(window).bind('beforeunload', function() {
-//        if (!window.form_submit) {
-//          return 'You have unsaved changes, are you sure you want to leave this page? Any unsaved changes will be lost!';
-//        }
-//      });
-//    });", 'inline');
-//  }
-//  
-//  if ($path == 'manage_rooms/2') {
-//    drupal_add_js("jQuery(document).ready(function () {
-//      jQuery('#edit-submit-2nd-floor-rooms').click(function(e) {
-//        window.form_submit = true;
-//      });
-//      jQuery(window).bind('beforeunload', function() {
-//        if (!window.form_submit) {
-//          return 'You have unsaved changes, are you sure you want to leave this page? Any unsaved changes will be lost!';
-//        }
-//      });
-//    });", 'inline');
-//  }
 }
 
 /**
@@ -302,3 +264,18 @@ function retreatform_node_update($node) {
   }
 }
 
+/**
+ * Implements hook_block_view_alter().
+ *
+ * When payment via PayPal is used, this function updates the block on the 
+ * PayPal payment page with the form saved in the session.
+ *
+ */
+function retreatform_block_view_alter(&$data, $block) {
+
+  if ($block->bid == 445) {
+//    dpm($_SESSION['paypal_form']);
+    $data['content'] = $_SESSION['paypal_form'];
+
+  }
+}

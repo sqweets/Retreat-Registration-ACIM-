@@ -31,8 +31,7 @@ function form_update_email($form, &$form_state) {
     '#type' => 'textarea',
     '#title' => t('Message'),
   );
-
-  $form['send_emails'] = array(
+    $form['send_emails'] = array(
     '#type' => 'submit',
     '#value' => t('SEND message'),
     '#submit' => array('form_update_email_submit'),
