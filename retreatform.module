@@ -40,51 +40,6 @@ function retreatform_menu() {
     'file' => 'email_resend_form.inc',
   );
 
-  // Setup the room manager pages
-  $items['manage_rooms'] = array(
-    'title' => t('Manage Rooms'),
-//    'menu_name' => 'menu-manage-rooms',
-    'menu_name' => 'navigation',
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('form_manage_setup_init'),
-    'access callback' => TRUE,
-    'type' => MENU_NORMAL_ITEM,
-    'file' => 'manage_rooms_form.inc',
-  );
-
-  $items['manage_rooms/init'] = array(
-    'title' => t('Instructions'),
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('form_manage_setup_init'),
-    'access callback' => TRUE,
-    'description' => t('Instructions and Initialization for the Room Manager'),
-    'type' => MENU_DEFAULT_LOCAL_TASK,
-    'weight' => 0,
-    'file' => 'manage_rooms_form.inc',
-  );
-
-  $items['manage_rooms/1'] = array(
-    'title' => t('First Floor'),
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('form_manage_first_floor_rooms'),
-    'access callback' => TRUE,
-    'description' => t('Manage First Floor Rooms'),
-    'type' => MENU_LOCAL_TASK,
-    'weight' => 1,
-    'file' => 'manage_rooms_form.inc',
-  );
-
-  $items['manage_rooms/2'] = array(
-    'title' => t('Second Floor'),
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('form_manage_second_floor_rooms'),
-    'access callback' => TRUE,
-    'description' => t('Manage Second Floor Rooms'),
-    'type' => MENU_LOCAL_TASK,
-    'weight' => 2,
-    'file' => 'manage_rooms_form.inc',
-  );
-
   $items['update_email'] = array(
     'title' => t('Send update email to all registrants'),
     'menu_name' => 'menu-retreat-email-tools',
@@ -129,56 +84,6 @@ function retreatform_menu() {
   );
 
   return $items;
-}
-
-/**
- * Implements hook_init().
- *
- * This function checks 2 init flags, one per floor, to determine if the variables need
- * to be initialized from the MC room nodes.  The init flags are reset when reset from the
- * Instructions page.
- */
-function retreatform_init() {
-  $path = drupal_get_path_alias();
-
-  // If on the manage room pages
-  if ($path == 'manage_rooms') {
-
-    $initialized_1st_floor = variable_get('initialized_1st_floor', FALSE);
-    $initialized_2nd_floor = variable_get('initialized_2nd_floor', FALSE);
-    
-    // Get the room data from the MC Rooms nodes if nothing initialized yet
-    if ($initialized_1st_floor == FALSE && $initialized_2nd_floor == FALSE) {     
-      $all_rooms = get_sorted_room_listing();
-        
-      // Split into first and second floors
-      foreach($all_rooms as $key => $value) {
-        if ($key < 200) {
-          $first_floor_rooms[$key] = $value;
-        } else if ($key >= 200) {
-          $second_floor_rooms[$key] = $value;
-        }
-      }
-    }
-
-    // Check init flag so only intialize 1st floor variables once
-    if ($initialized_1st_floor == FALSE) {
-    
-      variable_set('first_floor_rooms', $first_floor_rooms);
-
-      // The flag is reset for each floor when the floor is saved
-      variable_set('initialized_1st_floor', TRUE);
-    }
-
-    // Check init flag so only intialize 2nd floor variables once
-    if ($initialized_2nd_floor == FALSE) {
-      
-      variable_set('second_floor_rooms', $second_floor_rooms);
-
-      // The flag is reset for each floor when the floor is saved
-      variable_set('initialized_2nd_floor', TRUE);
-    }
-  }
 }
 
 /**

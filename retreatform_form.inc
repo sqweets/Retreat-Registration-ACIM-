@@ -953,7 +953,9 @@ function form_registration_page_three_submit($form, &$form_state) {
 
     // PayPal processing here
     // Build data and save in session
-    build_paypal_form_data($page_one_values, $page_two_values);
+    if ($page_two_values['form_of_payment'] == 'PayPal') {
+      build_paypal_form($page_one_values, $page_two_values);
+    }
   }
   else {
     drupal_set_message(t('Your registration is already recorded.'), 'error');
@@ -971,7 +973,7 @@ function form_registration_page_three_submit($form, &$form_state) {
  *  - PayPal expects a state code in 2-digit caps (no full names)
  *  - Need to break phone number into three strings... [area] [3-digits] [4-digits]
  */
-function build_paypal_form_data($page_one_values, $page_two_values) {
+function build_paypal_form($page_one_values, $page_two_values) {
 
   $total_paymemt = room_costs($page_two_values['option']) + intval($page_two_values['donation']);
   $registration_fee = room_costs($page_two_values['option']);
